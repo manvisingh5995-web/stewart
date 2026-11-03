@@ -32,3 +32,4 @@ Write one entry per working session. Keep the numbers; the case study needs them
 - **What broke and how I fixed it:** Connecting the GitHub repo for push-to-deploy was blocked by a permission check, so the first deploy went through the CLI. The Vercel MCP connection can only see my personal account, not the Manvihub team, so team lookups used the CLI.
 - **Checks:** page 200; API without a token 401; wrong token 401; right token 200 with an empty inbox (Redis connected). Build took 6s.
 - **Numbers so far:** 0 requests (hook not installed yet).
+- **Update:** Installed the Vercel GitHub app on just the `stewart` repo and connected it, so every push to `main` now deploys to production.
