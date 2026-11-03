@@ -421,8 +421,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   });
   function disconnect(msg){ store.del(TOKEN_KEY); token=null; if(msg) alert(msg); location.reload() }
 
-  // ---------- notification test (only at ?pushtest) ----------
-  const PUSHTEST = new URLSearchParams(location.search).has('pushtest');
+  // ---------- notification test (at ?pushtest, or in the Home Screen app, which has no address bar) ----------
+  const PUSHTEST = new URLSearchParams(location.search).has('pushtest') || matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
   const ptMsg = t => { const el=$('ptMsg'); if(el) el.textContent=t };
   const b64u = s => { const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(b,c=>c.charCodeAt(0)) };
   async function ptChecks(){
