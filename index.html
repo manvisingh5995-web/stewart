@@ -215,7 +215,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   // ---------- data layer ----------
   async function api(method, route, body){
-    const res = await fetch(route,{method,headers:{'content-type':'application/json','x-stewart-token':token},body:body?JSON.stringify(body):undefined});
+    // A request cut off by the phone sleeping can hang forever, so give up after 8 seconds.
+    const res = await fetch(route,{method,cache:'no-store',signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined,headers:{'content-type':'application/json','x-stewart-token':token},body:body?JSON.stringify(body):undefined});
     if(res.status===401){ disconnect('Your token doesn’t match the one in Vercel. Connect again.'); throw new Error('401') }
     if(!res.ok) throw new Error(route+' '+res.status);
     return res.json();
@@ -409,9 +410,19 @@ button{font:inherit;color:inherit;cursor:pointer}
   renderFoot();
   if(live()){
     try{S.dismissed=JSON.parse(store.get('stewart-dismissed')||'[]')}catch(e){}
-    const tick=async()=>{ if(!holdEl){ await pullWaiting(); renderWaiting(); renderSession() } };
+    let ticking=false;
+    const tick=async()=>{
+      if(holdEl||ticking) return;
+      ticking=true;
+      try{ await pullWaiting(); renderWaiting(); renderSession() } finally { ticking=false }
+    };
     Promise.all([pullWaiting(),pullRest()]).then(render);
     setInterval(tick,2000);
+    // iOS pauses the page while the phone is locked or Safari is in the background.
+    // Check straight away when it comes back instead of waiting for the timer.
+    const wake=()=>{ if(!document.hidden){ tick(); pullRest().then(()=>{renderHistory();renderRules()}) } };
+    document.addEventListener('visibilitychange',wake);
+    ['pageshow','focus','online'].forEach(t=>window.addEventListener(t,wake));
     setInterval(()=>{ if(!holdEl) pullRest().then(()=>{renderHistory();renderRules();renderWaiting()}) },15000);
   } else {
     S=loadDemo()||demoFresh();

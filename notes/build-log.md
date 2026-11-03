@@ -33,3 +33,10 @@ Write one entry per working session. Keep the numbers; the case study needs them
 - **Checks:** page 200; API without a token 401; wrong token 401; right token 200 with an empty inbox (Redis connected). Build took 6s.
 - **Numbers so far:** 0 requests (hook not installed yet).
 - **Update:** Installed the Vercel GitHub app on just the `stewart` repo and connected it, so every push to `main` now deploys to production.
+
+### 2026-11-03: Hook installed, first real requests
+- **Date and time:** 2026-11-03, 14:18
+- **What I did:** Connected my phone with the token, then added the hook, `STEWART_URL` and `STEWART_TOKEN` to `~/.claude/settings.json` (merged with the existing settings, file made readable only by me, old version kept as `settings.json.before-stewart`). Sent a test `npm install left-pad` request through the hook.
+- **Decision and why:** The token is copied from `~/.config/stewart/token` by a script, so it never appears on screen or in the transcript.
+- **What broke and how I fixed it:** Nothing broke, but the test took 8.6 minutes from request to decision, close to the 9-minute limit. A request from another open session (in `Handover`) went unanswered and expired. Cause: the request reached my phone straight away, but I only saw it later. The `Handover` request came from a session I was running in parallel; I denied a later delegate-project request from it. Lesson: Stewart only works if I notice the request, and a page in the background doesn't alert me. My feedback: it needs notifications.
+- **Numbers so far:** 3 requests: 2 allowed (test 8m39s, a follow-up command 26s), 1 expired, 0 denied, 0 by rule.

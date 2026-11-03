@@ -54,6 +54,8 @@ export default async function handler(req, res) {
         await record(r, it);
         continue;
       }
+      // First time an inbox sees it: measures how long requests take to reach the phone.
+      if (!it.seenAt) { it.seenAt = now; await saveItem(r, it); }
       live.push(it);
     }
     return res.status(200).json(live);
