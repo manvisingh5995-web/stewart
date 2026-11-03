@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stewart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bay:#E3E8EB; --strip:#FFFFFF; --ink:#0E1A21; --muted:#56666F; --line:#CCD5DA; --soft:#F1F4F6;
+  --low:#4F7290; --low-t:#3F627F; --med:#C98A10; --med-t:#875B00; --high:#C2352B; --high-t:#A92C23;
+  --allow:#1D6B4B; --allow-ink:#FFFFFF; --focus:#1F5FBF;
+  --sans:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bay:#11171B; --strip:#1A2329; --ink:#E3EAEE; --muted:#8C9DA7; --line:#2B373F; --soft:#222D34;
+    --low:#7D9DBB; --low-t:#9DBAD4; --med:#E3A93A; --med-t:#EDBF63; --high:#E5554A; --high-t:#F17C72;
+    --allow:#3E9C74; --allow-ink:#08140F; --focus:#7FB0FF; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bay:#11171B; --strip:#1A2329; --ink:#E3EAEE; --muted:#8C9DA7; --line:#2B373F; --soft:#222D34;
+  --low:#7D9DBB; --low-t:#9DBAD4; --med:#E3A93A; --med-t:#EDBF63; --high:#E5554A; --high-t:#F17C72;
+  --allow:#3E9C74; --allow-ink:#08140F; --focus:#7FB0FF; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bay);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.4;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bay)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:680px;margin:0 auto;padding:0 16px 120px}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bay);padding:18px 0 0}
+.brand{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
+.brand h1{margin:0;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.session{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--allow);flex:none}
+.paused .pulse{background:var(--muted)}
+.linkbtn{background:none;border:0;padding:4px 2px;text-decoration:underline;text-underline-offset:3px;color:var(--ink);font-size:14px}
+.tabs{display:flex;gap:4px;margin-top:16px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;padding:10px 12px 12px;font-size:16px;font-weight:500;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.count{display:inline-block;min-width:22px;padding:0 6px;margin-left:4px;border-radius:11px;background:var(--ink);color:var(--bay);font-size:13px;text-align:center;font-weight:600}
+.count:empty{display:none}
+
+/* bay */
+.bay{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.strip{display:grid;grid-template-columns:10px 1fr;background:var(--strip);border:1px solid var(--line);border-radius:3px;overflow:hidden;transition:transform .25s ease,opacity .25s ease}
+.band{position:relative;background:var(--line)}
+.band .fill{position:absolute;inset:auto 0 0 0;height:calc(var(--p,0)*100%);background:var(--allow)}
+.risk-low .band{background:var(--low)} .risk-medium .band{background:var(--med)} .risk-high .band{background:var(--high)}
+.sbody{padding:14px 16px 14px 14px;min-width:0}
+.row1{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted)}
+.rlabel{font-weight:600}
+.risk-low .rlabel{color:var(--low-t)} .risk-medium .rlabel{color:var(--med-t)} .risk-high .rlabel{color:var(--high-t)}
+.strip h3{margin:6px 0 2px;font-size:21px;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+.expand{background:none;border:0;padding:6px 0;font-size:14px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.details{margin-top:4px}
+.details pre{margin:0;padding:10px 12px;background:var(--soft);border-radius:3px;font-family:var(--mono);font-size:13.5px;line-height:1.5;overflow-x:auto;white-space:pre}
+.why{margin:8px 0 0;font-size:15px;color:var(--muted);max-width:60ch}
+.actions{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;min-height:46px;border-radius:3px;border:1px solid var(--line);background:var(--strip);font-size:16px;font-weight:600;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.btn.allow{background:var(--allow);border-color:var(--allow);color:var(--allow-ink)}
+.btn.hold{background:var(--strip);color:var(--ink);border-color:var(--ink)}
+.btn.hold .hfill{position:absolute;inset:0;transform-origin:left;transform:scaleX(var(--p,0));background:var(--allow)}
+.btn.hold span{position:relative;mix-blend-mode:normal}
+.btn.hold.holding span{color:var(--allow-ink)}
+.note{margin:10px 0 0;font-size:13.5px;color:var(--muted)}
+.leaving{opacity:0;transform:translateX(24px)}
+
+/* suggestion */
+.suggest{background:var(--ink);color:var(--bay);border-radius:3px;padding:16px}
+.suggest p{margin:0 0 12px;font-size:17px;max-width:52ch}
+.suggest .actions{margin-top:0}
+.suggest .btn{background:transparent;color:var(--bay);border-color:color-mix(in srgb,var(--bay) 40%,transparent)}
+.suggest .btn.primary{background:var(--bay);color:var(--ink);border-color:var(--bay)}
+
+/* empty */
+.empty{padding:40px 8px;text-align:left}
+.empty h2{margin:0 0 6px;font-size:24px}
+.empty p{margin:0;color:var(--muted);max-width:46ch}
+
+/* history & rules */
+.summary{margin:18px 0 6px;font-size:18px;max-width:52ch}
+.list{list-style:none;margin:12px 0 0;padding:0;border-top:1px solid var(--line)}
+.list li{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:baseline;padding:12px 2px;border-bottom:1px solid var(--line)}
+.dec{font-size:14px;font-weight:600}
+.dec.allowed{color:var(--allow)} .dec.denied{color:var(--high-t)} .dec.rule{color:var(--low-t)}
+.ltitle{font-size:16px;min-width:0}
+.lmeta{font-size:13px;color:var(--muted);white-space:nowrap}
+.rule{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:14px 2px;border-bottom:1px solid var(--line)}
+.rule h3{margin:0;font-size:18px;font-weight:600}
+.rule p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.rctl{display:flex;align-items:center;gap:14px}
+.switch{position:relative;width:46px;height:28px;flex:none}
+.switch input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.switch .tr{position:absolute;inset:0;border-radius:14px;background:var(--line);transition:background .15s}
+.switch .th{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--strip);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked + .tr{background:var(--allow)}
+.switch input:checked + .tr + .th{transform:translateX(18px)}
+.switch input:focus-visible + .tr{outline:3px solid var(--focus);outline-offset:2px}
+.guard{margin:18px 0 0;padding:12px 14px;border-left:3px solid var(--high);background:var(--strip);font-size:15px;color:var(--muted);max-width:60ch}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,140%);width:min(640px,calc(100% - 24px));background:var(--ink);color:var(--bay);border-radius:3px;padding:12px 12px 12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;transition:transform .25s ease;z-index:20}
+.toast.show{transform:translate(-50%,0)}
+.toast p{margin:0;font-size:15px;min-width:0}
+.toast button{background:var(--bay);color:var(--ink);border:0;border-radius:3px;padding:8px 14px;font-weight:600;flex:none}
+.toast .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--allow);width:100%;transform-origin:left}
+.foot{margin-top:40px;font-size:13.5px;color:var(--muted)}
+.foot p{margin:0 0 4px}
+.connect{margin-top:14px;padding:16px;background:var(--strip);border:1px solid var(--line);border-radius:3px;max-width:440px}
+.connect label{font-weight:600;font-size:16px}
+.connect .hint{margin:2px 0 10px;font-size:14px;color:var(--muted)}
+.connect input{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line);border-radius:3px;background:var(--bay);color:var(--ink);font:15px var(--mono)}
+.err{margin:8px 0 0;font-size:14px;color:var(--high-t)}
+.err:empty{display:none}
+.dec.expired{color:var(--muted)}
+.offline .pulse{background:var(--high)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.toast{visibility:hidden}.toast.show{visibility:visible}
+@media (max-width:480px){.session{flex-basis:100%}}
+@media (max-width:420px){.list li{grid-template-columns:1fr auto}.list li .dec{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Stewart</h1>
+      <div class="session" id="session"><span class="pulse"></span><span id="sessionText">Watching 3 demo sessions</span><button class="linkbtn" id="pauseBtn">Pause</button></div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="waiting" id="tab-waiting">Waiting<span class="count" id="waitCount"></span></button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="history" id="tab-history">History</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="rules" id="tab-rules">Rules</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="waiting" role="tabpanel" aria-labelledby="tab-waiting">
+      <div class="bay" id="bay" aria-live="polite"></div>
+    </section>
+    <section id="history" role="tabpanel" aria-labelledby="tab-history" hidden>
+      <p class="summary" id="summary"></p>
+      <ul class="list" id="histList"></ul>
+    </section>
+    <section id="rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
+      <div id="ruleList"></div>
+      <p class="guard">High-risk actions, like deleting files, pushing code or deploying, always come to you. Stewart never turns them into rules.</p>
+    </section>
+    <div class="foot" id="foot"></div>
+    <form class="connect" id="connect" hidden>
+      <label for="tok">Your Stewart token</label>
+      <p class="hint">It’s the STEWART_TOKEN you set in Vercel. It stays on this device.</p>
+      <input id="tok" type="password" autocomplete="off" spellcheck="false" required>
+      <div class="actions"><button type="button" class="btn" id="tokCancel">Cancel</button><button type="submit" class="btn allow">Connect</button></div>
+      <p class="err" id="tokErr" role="alert"></p>
+    </form>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status"><p id="toastText"></p><button id="undoBtn">Undo</button><span class="bar" id="toastBar"></span></div>
+
+<script>
+(function(){
+  const PATTERNS = {
+    'npm-install':'Install npm packages', 'edit-src':'Edit files in src', 'edit-files':'Edit project files',
+    'fetch-web':'Read web pages', 'tests':'Run the tests', 'build':'Run a build', 'lint':'Check code style'
+  };
+  const POOL = [
+    {risk:'low', title:'Edit Inbox.tsx', cmd:'Edit  src/components/Inbox.tsx\n12 lines', why:'Changes one file inside your project. Easy to undo with git.', pattern:'edit-src'},
+    {risk:'low', title:'Edit globals.css', cmd:'Edit  src/styles/globals.css\n4 lines', why:'Changes one file inside your project. Easy to undo with git.', pattern:'edit-src'},
+    {risk:'low', title:'Check code style', cmd:'npm run lint', why:'Reads your code and reports problems. Changes nothing.', pattern:'lint'},
+    {risk:'medium', title:'Install: framer-motion', cmd:'npm install framer-motion', why:'Downloads code from the internet into your project. Check the names are spelled right.', pattern:'npm-install'},
+    {risk:'medium', title:'Install: three@0.169.0', cmd:'npm install three@0.169.0', why:'Downloads code from the internet into your project. Check the names are spelled right.', pattern:'npm-install'},
+    {risk:'medium', title:'Read a page on vercel.com', cmd:'WebFetch  https://vercel.com/docs/cli/deploy', why:'Web pages can contain misleading instructions.', pattern:'fetch-web'},
+    {risk:'medium', title:'Run the tests', cmd:'npx playwright test', why:'Runs code on your machine.', pattern:'tests'},
+    {risk:'medium', title:'Run a build', cmd:'npm run build', why:'Compiles your project. Runs code on your machine.', pattern:'build'},
+    {risk:'high', title:'Delete: dist, node_modules', cmd:'rm -rf dist node_modules', why:'Removes files permanently. Nothing goes to the trash.', pattern:null},
+    {risk:'high', title:'Push code to GitHub', cmd:'git push origin main', why:'Sends your changes to the shared copy of your code. Anyone with access will see them.', pattern:null},
+    {risk:'high', title:'Deploy to your live site', cmd:'vercel --prod', why:'Replaces what visitors see right now.', pattern:null},
+    {risk:'high', title:'Change your secret keys file', cmd:'Write  .env.local', why:'This file holds passwords and API keys. A wrong edit can break the app or leak a key.', pattern:null}
+  ];
+  const PROJECTS = ['stewart','portfolio-site','craft-showpiece'];
+  const RISKLABEL = {low:'Low risk', medium:'Medium risk', high:'High risk'};
+  const DECLABEL = {allowed:'Allowed', denied:'Denied', rule:'By rule', expired:'Timed out'};
+  const RANK = {high:0, medium:1, low:2};
+  const DEMO_KEY='stewart-demo-v2', TOKEN_KEY='stewart-token';
+  const $ = id => document.getElementById(id);
+  const esc = t => String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const store = {
+    get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+    set(k,v){try{localStorage.setItem(k,v)}catch(e){}},
+    del(k){try{localStorage.removeItem(k)}catch(e){}}
+  };
+  function ago(ts){const s=Math.max(1,Math.round((Date.now()-ts)/1000));if(s<60)return s+'s ago';const m=Math.round(s/60);if(m<60)return m+' min ago';const h=Math.round(m/60);if(h<48)return h+' h ago';return Math.round(h/24)+' days ago'}
+
+  let token = store.get(TOKEN_KEY);
+  const live = () => !!token;
+  let S = {waiting:[], history:[], rules:[], dismissed:[]};
+  let paused=false, pending=null, toastTimer=null, offline=false;
+  const open=new Set();
+
+  // ---------- data layer ----------
+  async function api(method, route, body){
+    const res = await fetch(route,{method,headers:{'content-type':'application/json','x-stewart-token':token},body:body?JSON.stringify(body):undefined});
+    if(res.status===401){ disconnect('Your token doesn’t match the one in Vercel. Connect again.'); throw new Error('401') }
+    if(!res.ok) throw new Error(route+' '+res.status);
+    return res.json();
+  }
+  function setOffline(v){offline=v;renderSession()}
+  async function pullWaiting(){
+    try{ S.waiting = await api('GET','/api/requests'); setOffline(false) }catch(e){ if(e.message!=='401') setOffline(true) }
+  }
+  async function pullRest(){
+    try{
+      const [h,r] = await Promise.all([api('GET','/api/history'),api('GET','/api/rules')]);
+      S.history = h.map(x=>({title:x.title,project:x.project,risk:x.risk,pattern:x.pattern,decision:x.status,at:x.decidedAt||x.ts})).reverse();
+      S.rules = r; setOffline(false);
+    }catch(e){ if(e.message!=='401') setOffline(true) }
+  }
+  function demoFresh(){
+    const now=Date.now();
+    return {seq:3, waiting:[mk(POOL[10],'portfolio-site',now-41000,'d1'), mk(POOL[3],'craft-showpiece',now-95000,'d2'), mk(POOL[0],'stewart',now-12000,'d3')], history:[], rules:[], dismissed:[]};
+  }
+  function mk(p,project,ts,id){return Object.assign({},p,{project,ts,id:String(id)})}
+  function saveDemo(){ if(!live()) store.set(DEMO_KEY,JSON.stringify(S)) }
+  function loadDemo(){ try{const v=store.get(DEMO_KEY);return v?JSON.parse(v):null}catch(e){return null} }
+
+  // ---------- rendering ----------
+  function suggestion(){
+    const counts={};
+    S.history.forEach(h=>{ if(h.decision==='allowed'&&h.pattern&&h.risk!=='high'&&PATTERNS[h.pattern]){const k=h.pattern+'|'+h.project;counts[k]=(counts[k]||0)+1} });
+    for(const k in counts){
+      if(counts[k]>=3 && !S.dismissed.includes(k) && !S.rules.find(x=>x.pattern+'|'+x.project===k)){
+        const [pattern,project]=k.split('|'); return {pattern,project,count:counts[k],key:k};
+      }
+    }
+    return null;
+  }
+  function renderSession(){
+    const sess=$('session');
+    sess.classList.toggle('paused',!live()&&paused);
+    sess.classList.toggle('offline',live()&&offline);
+    $('pauseBtn').hidden=live();
+    $('sessionText').textContent = live()
+      ? (offline ? 'Can’t reach your Stewart server. Retrying.' : 'Connected to Claude Code')
+      : (paused ? 'Demo sessions paused' : 'Watching 3 demo sessions');
+  }
+  function renderWaiting(){
+    const list=S.waiting.filter(r=>!pending||r.id!==pending.r.id).sort((a,b)=>RANK[a.risk]-RANK[b.risk]||a.ts-b.ts);
+    let html='';
+    const sg=suggestion();
+    if(sg) html+=`<div class="suggest"><p>You’ve allowed “${esc(PATTERNS[sg.pattern])}” ${sg.count} times in ${esc(sg.project)}. Allow it automatically from now on?</p><div class="actions"><button class="btn" data-dismiss="${esc(sg.key)}">Keep asking</button><button class="btn primary" data-rule="${esc(sg.key)}">Make it a rule</button></div></div>`;
+    if(!list.length) html+=`<div class="empty"><h2>Nothing waiting</h2><p>${live()?'Claude Code checks in here before anything risky. Keep this open and you’ll see it the moment it asks.':'Claude Code checks in here before anything risky. You’ll see it the moment it asks.'}</p></div>`;
+    list.forEach(r=>{
+      const id=esc(r.id), isOpen=open.has(r.id)||r.risk==='high';
+      const allowBtn = r.risk==='high'
+        ? `<button class="btn hold" data-hold="${id}" aria-label="Press and hold to allow"><span class="hfill"></span><span>Hold to allow</span></button>`
+        : `<button class="btn allow" data-allow="${id}">Allow</button>`;
+      html+=`<article class="strip risk-${r.risk}" id="s-${id}">
+        <div class="band"><span class="fill"></span></div>
+        <div class="sbody">
+          <div class="row1"><span class="rlabel">${RISKLABEL[r.risk]}</span><span>${esc(r.project)}, ${ago(r.ts)}</span></div>
+          <h3>${esc(r.title)}</h3>
+          ${r.risk==='high'?'':`<button class="expand" data-expand="${id}" aria-expanded="${isOpen}">${isOpen?'Hide command':'Show command'}</button>`}
+          <div class="details" ${isOpen?'':'hidden'}><pre>${esc(r.cmd)}</pre><p class="why">${esc(r.why)}</p></div>
+          <div class="actions"><button class="btn" data-deny="${id}">Deny</button>${allowBtn}</div>
+        </div>
+      </article>`;
+    });
+    $('bay').innerHTML=html;
+    $('waitCount').textContent=list.length||'';
+  }
+  function renderHistory(){
+    const h=S.history, n=d=>h.filter(x=>x.decision===d).length;
+    $('summary').textContent = h.length ? `So far: ${n('allowed')} allowed by you, ${n('denied')} denied, ${n('rule')} handled by your rules${n('expired')?`, ${n('expired')} timed out`:''}.` : 'No decisions yet. Everything you allow or deny shows up here.';
+    $('histList').innerHTML=[...h].reverse().slice(0,100).map(x=>`<li><span class="dec ${x.decision}">${DECLABEL[x.decision]||x.decision}</span><span class="ltitle">${esc(x.title)}</span><span class="lmeta">${esc(x.project)}, ${ago(x.at)}</span></li>`).join('');
+  }
+  function renderRules(){
+    if(!S.rules.length){$('ruleList').innerHTML=`<div class="empty"><h2>No rules yet</h2><p>When you allow the same kind of action 3 times in a project, Stewart offers to make it a rule.</p></div>`;return}
+    $('ruleList').innerHTML=S.rules.map(x=>{const k=esc(x.pattern+'|'+x.project);return `<div class="rule"><div><h3>Always allow: ${esc(PATTERNS[x.pattern]||x.pattern)}</h3><p>In ${esc(x.project)}. Used ${x.used||0} times.</p></div><div class="rctl"><label class="switch"><input type="checkbox" data-toggle="${k}" ${x.on?'checked':''} aria-label="Rule on"><span class="tr"></span><span class="th"></span></label><button class="linkbtn" data-remove="${k}">Remove</button></div></div>`}).join('');
+  }
+  function renderFoot(){
+    $('foot').innerHTML = live()
+      ? `<p>Connected to your Claude Code sessions.</p><button class="linkbtn" id="discBtn">Disconnect this device</button>`
+      : `<p>This is a demo. Requests are simulated to show how Claude Code sessions check in with Stewart.</p><button class="linkbtn" id="connBtn">Connect to Claude Code</button> <button class="linkbtn" id="resetBtn">Reset demo</button>`;
+  }
+  function render(){renderSession();renderWaiting();renderHistory();renderRules();saveDemo()}
+
+  // ---------- decisions ----------
+  function decide(id,decision){
+    if(pending) commit();
+    const r=S.waiting.find(x=>x.id===id); if(!r) return;
+    const el=$('s-'+id); if(el) el.classList.add('leaving');
+    setTimeout(()=>{ pending={r,decision}; renderWaiting(); showToast((decision==='allowed'?'Allowed: ':'Denied: ')+r.title,true) },200);
+  }
+  async function commit(){
+    if(!pending) return;
+    const {r,decision}=pending; pending=null;
+    if(live()){
+      try{ await api('POST','/api/decision',{id:r.id,decision}) }
+      catch(e){ if(e.message.endsWith('409')) showToast('Too late: that request had already timed out.',false); else if(e.message!=='401') showToast('Couldn’t send that decision. Check your connection.',false) }
+      await pullWaiting(); await pullRest(); render();
+    } else {
+      S.waiting=S.waiting.filter(x=>x.id!==r.id);
+      S.history.push({title:r.title,project:r.project,risk:r.risk,pattern:r.pattern,decision,at:Date.now()});
+      render();
+    }
+  }
+  function undo(){ if(!pending) return; pending=null; hideToast(); renderWaiting() }
+  async function ruleOp(method,key,extra){
+    const [pattern,project]=key.split('|');
+    if(live()){ try{ S.rules=await api(method,'/api/rules',Object.assign({pattern,project},extra||{})) }catch(e){} }
+    else {
+      const i=S.rules.findIndex(x=>x.pattern===pattern&&x.project===project);
+      if(method==='POST'&&i===-1) S.rules.push({pattern,project,on:true,used:0});
+      if(method==='PATCH'&&i>-1) S.rules[i].on=extra.on;
+      if(method==='DELETE'&&i>-1) S.rules.splice(i,1);
+    }
+    render();
+  }
+
+  // ---------- toast ----------
+  function showToast(text,withUndo){
+    clearTimeout(toastTimer);
+    $('toastText').textContent=text; $('undoBtn').hidden=!withUndo;
+    const bar=$('toastBar'); bar.style.transition='none'; bar.style.transform='scaleX(1)';
+    $('toast').classList.add('show');
+    const dur=withUndo?5000:3000;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{bar.style.transition=`transform ${dur}ms linear`;bar.style.transform='scaleX(0)'}));
+    toastTimer=setTimeout(()=>{hideToast();commit()},dur);
+  }
+  function hideToast(){$('toast').classList.remove('show');clearTimeout(toastTimer)}
+
+  // ---------- hold to allow ----------
+  let holdRaf=null, holdStart=0, holdEl=null; const HOLD_MS=900;
+  function startHold(btn){
+    holdEl=btn; holdStart=performance.now(); btn.classList.add('holding');
+    const strip=btn.closest('.strip');
+    const step=t=>{
+      const p=Math.min(1,(t-holdStart)/HOLD_MS);
+      btn.style.setProperty('--p',p); strip.style.setProperty('--p',p);
+      if(p>=1){ const id=btn.dataset.hold; stopHold(true); decide(id,'allowed'); return }
+      holdRaf=requestAnimationFrame(step);
+    };
+    holdRaf=requestAnimationFrame(step);
+  }
+  function stopHold(done){
+    cancelAnimationFrame(holdRaf);
+    if(holdEl&&!done){holdEl.style.setProperty('--p',0);const s=holdEl.closest('.strip');if(s)s.style.setProperty('--p',0);holdEl.classList.remove('holding')}
+    holdEl=null;
+  }
+  document.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-hold]');if(b){e.preventDefault();startHold(b)}});
+  ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,()=>{if(holdEl)stopHold(false)}));
+  document.addEventListener('pointerout',e=>{if(holdEl&&e.target.closest('[data-hold]')===holdEl&&!holdEl.contains(e.relatedTarget))stopHold(false)});
+  document.addEventListener('keydown',e=>{const b=e.target.closest&&e.target.closest('[data-hold]');if(b&&(e.key===' '||e.key==='Enter')){e.preventDefault();if(!e.repeat&&!holdEl)startHold(b)}});
+  document.addEventListener('keyup',e=>{if(holdEl&&(e.key===' '||e.key==='Enter'))stopHold(false)});
+
+  // ---------- clicks ----------
+  document.addEventListener('click',e=>{
+    const t=e.target.closest('button,input'); if(!t) return;
+    const d=t.dataset;
+    if(d.allow) decide(d.allow,'allowed');
+    else if(d.deny) decide(d.deny,'denied');
+    else if(d.expand){open.has(d.expand)?open.delete(d.expand):open.add(d.expand);renderWaiting()}
+    else if(d.rule){ruleOp('POST',d.rule);const [p,pr]=d.rule.split('|');showToast('Rule added: '+PATTERNS[p]+' in '+pr,false)}
+    else if(d.dismiss){S.dismissed.push(d.dismiss);if(live())store.set('stewart-dismissed',JSON.stringify(S.dismissed));render()}
+    else if(d.remove) ruleOp('DELETE',d.remove);
+    else if(d.toggle) ruleOp('PATCH',d.toggle,{on:t.checked});
+    else if(d.tab) setTab(d.tab);
+    else if(t.id==='connBtn'){$('connect').hidden=false;$('tok').focus()}
+    else if(t.id==='tokCancel'){$('connect').hidden=true}
+    else if(t.id==='discBtn') disconnect();
+    else if(t.id==='resetBtn'){S=demoFresh();pending=null;hideToast();render()}
+  });
+  $('undoBtn').addEventListener('click',undo);
+  $('pauseBtn').addEventListener('click',()=>{paused=!paused;$('pauseBtn').textContent=paused?'Resume':'Pause';renderSession()});
+  $('connect').addEventListener('submit',async e=>{
+    e.preventDefault(); $('tokErr').textContent='';
+    const t=$('tok').value.trim();
+    try{
+      const res=await fetch('/api/requests',{headers:{'x-stewart-token':t}});
+      if(res.status===401){$('tokErr').textContent='That token doesn’t match STEWART_TOKEN in Vercel.';return}
+      if(!res.ok){const j=await res.json().catch(()=>({}));$('tokErr').textContent=j.error||('The server answered with error '+res.status+'.');return}
+      store.set(TOKEN_KEY,t); location.reload();
+    }catch(err){$('tokErr').textContent='Couldn’t reach the server. Connecting only works on your deployed Stewart site.'}
+  });
+  function disconnect(msg){ store.del(TOKEN_KEY); token=null; if(msg) alert(msg); location.reload() }
+  function setTab(name){
+    document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
+    ['waiting','history','rules'].forEach(n=>$(n).hidden=n!==name);
+    if(live()&&name!=='waiting') pullRest().then(render);
+  }
+
+  // ---------- start ----------
+  renderFoot();
+  if(live()){
+    try{S.dismissed=JSON.parse(store.get('stewart-dismissed')||'[]')}catch(e){}
+    const tick=async()=>{ if(!holdEl){ await pullWaiting(); renderWaiting(); renderSession() } };
+    Promise.all([pullWaiting(),pullRest()]).then(render);
+    setInterval(tick,2000);
+    setInterval(()=>{ if(!holdEl) pullRest().then(()=>{renderHistory();renderRules();renderWaiting()}) },15000);
+  } else {
+    S=loadDemo()||demoFresh();
+    render();
+    setInterval(()=>{
+      if(paused||holdEl||S.waiting.length>=6) return;
+      const p=POOL[Math.floor(Math.random()*POOL.length)];
+      const r=mk(p,PROJECTS[Math.floor(Math.random()*PROJECTS.length)],Date.now(),'d'+(++S.seq));
+      const rule=r.risk!=='high'&&r.pattern&&S.rules.find(x=>x.on&&x.pattern===r.pattern&&x.project===r.project);
+      if(rule){ rule.used=(rule.used||0)+1; S.history.push({title:r.title,project:r.project,risk:r.risk,pattern:r.pattern,decision:'rule',at:Date.now()}); render(); if(!pending) showToast('Handled by your rule: '+r.title,false) }
+      else { S.waiting.push(r); render() }
+    },9000);
+    setInterval(()=>{ if(!holdEl){renderWaiting();renderHistory()} },15000);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "env": {
+    "STEWART_URL": "https://YOUR-STEWART.vercel.app",
+    "STEWART_TOKEN": "PASTE-YOUR-TOKEN"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit|WebFetch|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /ABSOLUTE/PATH/TO/stewart/hooks/stewart-hook.mjs",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

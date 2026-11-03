@@ -1,0 +1,11 @@
+{
+  "name": "stewart",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Approval inbox for Claude Code. Risky actions wait for your tap.",
+  "dependencies": {
+    "@upstash/redis": "1.34.3"
+  },
+  "engines": { "node": ">=18" }
+}
