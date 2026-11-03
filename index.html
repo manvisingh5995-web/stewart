@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stewart</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stewart">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -89,6 +93,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 .empty{padding:40px 8px;text-align:left}
 .empty h2{margin:0 0 6px;font-size:24px}
 .empty p{margin:0;color:var(--muted);max-width:46ch}
+.ptest{margin-top:24px;padding:16px;background:var(--strip);border:1px solid var(--line);border-radius:3px}
+.ptest h2{margin:0 0 8px;font-size:18px}
+.ptest ul{margin:0 0 14px;padding:0;list-style:none;font-size:15px;color:var(--muted)}
+.ptest li b{color:var(--ink);font-weight:600}
+.ptest .actions{display:flex;flex-wrap:wrap;gap:8px}
+.ptest p{margin:12px 0 0;font-size:15px}
 
 /* history & rules */
 .summary{margin:18px 0 6px;font-size:18px;max-width:52ch}
@@ -297,6 +307,13 @@ button{font:inherit;color:inherit;cursor:pointer}
   function renderFoot(){
     $('foot').innerHTML = live()
       ? `<p>Connected to your Claude Code sessions.</p><button class="linkbtn" id="discBtn">Disconnect this device</button>`
+        + (PUSHTEST ? `<div class="ptest"><h2>Notification test</h2><ul id="ptChecks"></ul>
+          <div class="actions"><button class="btn allow" id="ptOn">Turn on notifications</button>
+          <button class="btn" data-ptest="high">Test high risk</button>
+          <button class="btn" data-ptest="grouped">Test grouped</button>
+          <button class="btn" data-ptest="grouped-renotify">Test grouped, alert each time</button>
+          <button class="btn" id="ptClear">Clear test notifications</button></div>
+          <p id="ptMsg" role="status"></p></div>` : '')
       : `<p>This is a demo. Requests are simulated to show how Claude Code sessions check in with Stewart.</p><button class="linkbtn" id="connBtn">Connect to Claude Code</button> <button class="linkbtn" id="resetBtn">Reset demo</button>`;
   }
   function render(){renderSession();renderWaiting();renderHistory();renderRules();saveDemo()}
@@ -385,6 +402,9 @@ button{font:inherit;color:inherit;cursor:pointer}
     else if(t.id==='connBtn'){$('connect').hidden=false;$('tok').focus()}
     else if(t.id==='tokCancel'){$('connect').hidden=true}
     else if(t.id==='discBtn') disconnect();
+    else if(t.id==='ptOn') pushOn();
+    else if(d.ptest) pushTest(d.ptest);
+    else if(t.id==='ptClear') pushClear();
     else if(t.id==='resetBtn'){S=demoFresh();pending=null;hideToast();render()}
   });
   $('undoBtn').addEventListener('click',undo);
@@ -400,6 +420,52 @@ button{font:inherit;color:inherit;cursor:pointer}
     }catch(err){$('tokErr').textContent='Couldn’t reach the server. Connecting only works on your deployed Stewart site.'}
   });
   function disconnect(msg){ store.del(TOKEN_KEY); token=null; if(msg) alert(msg); location.reload() }
+
+  // ---------- notification test (only at ?pushtest) ----------
+  const PUSHTEST = new URLSearchParams(location.search).has('pushtest');
+  const ptMsg = t => { const el=$('ptMsg'); if(el) el.textContent=t };
+  const b64u = s => { const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(b,c=>c.charCodeAt(0)) };
+  async function ptChecks(){
+    const el=$('ptChecks'); if(!el) return;
+    const reg='serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    const sub=reg&&reg.pushManager ? await reg.pushManager.getSubscription() : null;
+    const yes=v=>v?'<b>Yes</b>':'No';
+    el.innerHTML=[
+      ['Opened from the Home Screen', matchMedia('(display-mode: standalone)').matches||navigator.standalone===true],
+      ['Push available', 'PushManager' in window],
+      ['Permission', 'Notification' in window ? Notification.permission : 'not available'],
+      ['This device subscribed', !!sub],
+      ['Icon badge available', 'setAppBadge' in navigator],
+      ['Can clear notifications', !!(reg&&reg.getNotifications)]
+    ].map(([k,v])=>`<li>${k}: ${typeof v==='string'?'<b>'+esc(v)+'</b>':yes(v)}</li>`).join('');
+  }
+  async function pushOn(){
+    ptMsg('');
+    try{
+      if(!('Notification' in window)||!('PushManager' in window)) return ptMsg('Push isn’t available here. On iPhone, open Stewart from its Home Screen icon.');
+      const perm=await Notification.requestPermission();
+      if(perm!=='granted') return ptMsg('Notifications are off. Turn them on in Settings, Notifications, Stewart.');
+      const reg=await navigator.serviceWorker.ready;
+      const {key}=await api('GET','/api/push');
+      const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)});
+      await api('POST','/api/push',{action:'subscribe',sub:sub.toJSON()});
+      ptMsg('Notifications are on for this device.');
+    }catch(e){ ptMsg('Couldn’t turn on notifications: '+e.message) }
+    ptChecks();
+  }
+  async function pushTest(name){
+    try{
+      const j=await api('POST','/api/push',{action:'test',test:name});
+      ptMsg(`Sending ${j.count} in ${j.startsInSeconds} seconds, ${j.gapSeconds} seconds apart. Lock your phone now.`);
+    }catch(e){ ptMsg('Couldn’t start the test: '+e.message) }
+  }
+  async function pushClear(){
+    const reg=await navigator.serviceWorker.getRegistration();
+    const list=reg&&reg.getNotifications ? await reg.getNotifications() : [];
+    list.forEach(n=>n.close());
+    if(navigator.clearAppBadge) await navigator.clearAppBadge().catch(()=>{});
+    ptMsg(reg&&reg.getNotifications ? `Cleared ${list.length} notifications and the badge.` : 'This phone doesn’t let Stewart clear notifications. Swipe them away instead.');
+  }
   function setTab(name){
     document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
     ['waiting','history','rules'].forEach(n=>$(n).hidden=n!==name);
@@ -407,7 +473,9 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
 
   // ---------- start ----------
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
   renderFoot();
+  ptChecks();
   if(live()){
     try{S.dismissed=JSON.parse(store.get('stewart-dismissed')||'[]')}catch(e){}
     let ticking=false;
