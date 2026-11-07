@@ -73,7 +73,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .details pre{margin:0;padding:10px 12px;background:var(--soft);border-radius:3px;font-family:var(--mono);font-size:13.5px;line-height:1.5;overflow-x:auto;white-space:pre}
 .why{margin:8px 0 0;font-size:15px;color:var(--muted);max-width:60ch}
 .actions{display:flex;gap:8px;margin-top:12px}
-.btn{flex:1;min-height:46px;border-radius:3px;border:1px solid var(--line);background:var(--strip);font-size:16px;font-weight:600;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.btn{flex:1;min-width:0;min-height:46px;padding:10px 12px;line-height:1.2;white-space:normal;border-radius:3px;border:1px solid var(--line);background:var(--strip);font-size:16px;font-weight:600;position:relative;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
 .btn.allow{background:var(--allow);border-color:var(--allow);color:var(--allow-ink)}
 .btn.hold{background:var(--strip);color:var(--ink);border-color:var(--ink)}
 .btn.hold .hfill{position:absolute;inset:0;transform-origin:left;transform:scaleX(var(--p,0));background:var(--allow)}
@@ -90,15 +90,26 @@ button{font:inherit;color:inherit;cursor:pointer}
 .suggest .btn.primary{background:var(--bay);color:var(--ink);border-color:var(--bay)}
 
 /* empty */
-.empty{padding:40px 8px;text-align:left}
-.empty h2{margin:0 0 6px;font-size:24px}
-.empty p{margin:0;color:var(--muted);max-width:46ch}
-.ptest{margin-top:24px;padding:16px;background:var(--strip);border:1px solid var(--line);border-radius:3px}
-.ptest h2{margin:0 0 8px;font-size:18px}
-.ptest ul{margin:0 0 14px;padding:0;list-style:none;font-size:15px;color:var(--muted)}
-.ptest li b{color:var(--ink);font-weight:600}
-.ptest .actions{display:flex;flex-wrap:wrap;gap:8px}
-.ptest p{margin:12px 0 0;font-size:15px}
+.empty{padding:32px 0 8px;text-align:left}
+.empty h2{margin:0 0 6px;font-size:24px;line-height:1.2}
+.empty p{margin:0;color:var(--muted);max-width:40ch;overflow-wrap:break-word}
+.notice{margin-top:18px;padding:16px;background:var(--strip);border:1px solid var(--line);border-radius:3px}
+.notice:empty{display:none}
+.notice p{margin:0;font-size:16px;max-width:52ch}
+.notice .actions{margin-top:12px}
+
+/* settings */
+.set{margin-top:18px;padding:16px;background:var(--strip);border:1px solid var(--line);border-radius:3px}
+.set h2{margin:0 0 6px;font-size:20px}
+.set h3{margin:18px 0 4px;font-size:16px}
+.set p{margin:0;font-size:15px;color:var(--muted);max-width:56ch}
+.set p.state{color:var(--ink);font-size:16px}
+.set .stack{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.set .stack .btn{flex:none;width:100%}
+.set .msg{margin-top:10px;color:var(--ink)}
+.set .msg:empty{display:none}
+.hbtn{background:none;border:0;padding:6px 2px;font-size:15px;font-weight:500;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.hbtn[aria-pressed="true"]{color:var(--ink)}
 
 /* history & rules */
 .summary{margin:18px 0 6px;font-size:18px;max-width:52ch}
@@ -149,7 +160,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <header class="top">
     <div class="brand">
       <h1>Stewart</h1>
-      <div class="session" id="session"><span class="pulse"></span><span id="sessionText">Watching 3 demo sessions</span><button class="linkbtn" id="pauseBtn">Pause</button></div>
+      <div class="session" id="session"><span class="pulse"></span><span id="sessionText">Showing 3 sample sessions</span><button class="linkbtn" id="pauseBtn">Pause</button><button class="hbtn" id="setBtn" aria-pressed="false" aria-controls="settings">Settings</button></div>
     </div>
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" aria-selected="true" data-tab="waiting" id="tab-waiting">Waiting<span class="count" id="waitCount"></span></button>
@@ -160,6 +171,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
   <main>
     <section id="waiting" role="tabpanel" aria-labelledby="tab-waiting">
+      <div class="notice" id="notice"></div>
       <div class="bay" id="bay" aria-live="polite"></div>
     </section>
     <section id="history" role="tabpanel" aria-labelledby="tab-history" hidden>
@@ -168,12 +180,14 @@ button{font:inherit;color:inherit;cursor:pointer}
     </section>
     <section id="rules" role="tabpanel" aria-labelledby="tab-rules" hidden>
       <div id="ruleList"></div>
-      <p class="guard">High-risk actions, like deleting files, pushing code or deploying, always come to you. Stewart never turns them into rules.</p>
+      <p class="guard">High-risk actions, like deleting files, pushing code or deploying, always come to you. They can’t become rules.</p>
     </section>
+    <section id="settings" aria-label="Settings" hidden></section>
     <div class="foot" id="foot"></div>
     <form class="connect" id="connect" hidden>
       <label for="tok">Your Stewart token</label>
-      <p class="hint">It’s the STEWART_TOKEN you set in Vercel. It stays on this device.</p>
+      <p class="hint">Paste the STEWART_TOKEN you added in Vercel. It’s saved only on this phone.</p>
+      <p class="hint" id="tokHome" hidden>The Home Screen app doesn’t share Safari’s sign-in, so paste your token once more.</p>
       <input id="tok" type="password" autocomplete="off" spellcheck="false" required>
       <div class="actions"><button type="button" class="btn" id="tokCancel">Cancel</button><button type="submit" class="btn allow">Connect</button></div>
       <p class="err" id="tokErr" role="alert"></p>
@@ -193,19 +207,19 @@ button{font:inherit;color:inherit;cursor:pointer}
     {risk:'low', title:'Edit Inbox.tsx', cmd:'Edit  src/components/Inbox.tsx\n12 lines', why:'Changes one file inside your project. Easy to undo with git.', pattern:'edit-src'},
     {risk:'low', title:'Edit globals.css', cmd:'Edit  src/styles/globals.css\n4 lines', why:'Changes one file inside your project. Easy to undo with git.', pattern:'edit-src'},
     {risk:'low', title:'Check code style', cmd:'npm run lint', why:'Reads your code and reports problems. Changes nothing.', pattern:'lint'},
-    {risk:'medium', title:'Install: framer-motion', cmd:'npm install framer-motion', why:'Downloads code from the internet into your project. Check the names are spelled right.', pattern:'npm-install'},
-    {risk:'medium', title:'Install: three@0.169.0', cmd:'npm install three@0.169.0', why:'Downloads code from the internet into your project. Check the names are spelled right.', pattern:'npm-install'},
-    {risk:'medium', title:'Read a page on vercel.com', cmd:'WebFetch  https://vercel.com/docs/cli/deploy', why:'Web pages can contain misleading instructions.', pattern:'fetch-web'},
+    {risk:'medium', title:'Install: framer-motion', cmd:'npm install framer-motion', why:'Downloads code from the internet into your project. Check each name is spelled right.', pattern:'npm-install'},
+    {risk:'medium', title:'Install: three@0.169.0', cmd:'npm install three@0.169.0', why:'Downloads code from the internet into your project. Check each name is spelled right.', pattern:'npm-install'},
+    {risk:'medium', title:'Read a page on vercel.com', cmd:'WebFetch  https://vercel.com/docs/cli/deploy', why:'Claude Code will read this page. Some pages include instructions meant to mislead it.', pattern:'fetch-web'},
     {risk:'medium', title:'Run the tests', cmd:'npx playwright test', why:'Runs code on your machine.', pattern:'tests'},
     {risk:'medium', title:'Run a build', cmd:'npm run build', why:'Compiles your project. Runs code on your machine.', pattern:'build'},
-    {risk:'high', title:'Delete: dist, node_modules', cmd:'rm -rf dist node_modules', why:'Removes files permanently. Nothing goes to the trash.', pattern:null},
-    {risk:'high', title:'Push code to GitHub', cmd:'git push origin main', why:'Sends your changes to the shared copy of your code. Anyone with access will see them.', pattern:null},
+    {risk:'high', title:'Delete: dist, node_modules', cmd:'rm -rf dist node_modules', why:'Deletes these for good. They skip the Trash.', pattern:null},
+    {risk:'high', title:'Push code to GitHub', cmd:'git push origin main', why:'Sends your commits to GitHub. Anyone who can see the repo will see them.', pattern:null},
     {risk:'high', title:'Deploy to your live site', cmd:'vercel --prod', why:'Replaces what visitors see right now.', pattern:null},
-    {risk:'high', title:'Change your secret keys file', cmd:'Write  .env.local', why:'This file holds passwords and API keys. A wrong edit can break the app or leak a key.', pattern:null}
+    {risk:'high', title:'Change your secret keys file', cmd:'Write  .env.local', why:'This file holds your passwords and API keys. A mistake here can stop the app from starting.', pattern:null}
   ];
   const PROJECTS = ['stewart','portfolio-site','craft-showpiece'];
   const RISKLABEL = {low:'Low risk', medium:'Medium risk', high:'High risk'};
-  const DECLABEL = {allowed:'Allowed', denied:'Denied', rule:'By rule', expired:'Timed out'};
+  const DECLABEL = {allowed:'Allowed', denied:'Denied', rule:'Allowed by rule', expired:'No answer'};
   const RANK = {high:0, medium:1, low:2};
   const DEMO_KEY='stewart-demo-v2', TOKEN_KEY='stewart-token';
   const $ = id => document.getElementById(id);
@@ -227,7 +241,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   async function api(method, route, body){
     // A request cut off by the phone sleeping can hang forever, so give up after 8 seconds.
     const res = await fetch(route,{method,cache:'no-store',signal:AbortSignal.timeout?AbortSignal.timeout(8000):undefined,headers:{'content-type':'application/json','x-stewart-token':token},body:body?JSON.stringify(body):undefined});
-    if(res.status===401){ disconnect('Your token doesn’t match the one in Vercel. Connect again.'); throw new Error('401') }
+    if(res.status===401){ disconnect('This phone was disconnected because the token in Vercel changed. Connect again with the new one.'); throw new Error('401') }
     if(!res.ok) throw new Error(route+' '+res.status);
     return res.json();
   }
@@ -267,15 +281,15 @@ button{font:inherit;color:inherit;cursor:pointer}
     sess.classList.toggle('offline',live()&&offline);
     $('pauseBtn').hidden=live();
     $('sessionText').textContent = live()
-      ? (offline ? 'Can’t reach your Stewart server. Retrying.' : 'Connected to Claude Code')
-      : (paused ? 'Demo sessions paused' : 'Watching 3 demo sessions');
+      ? (offline ? 'Can’t reach Stewart. Trying again. Check this phone’s connection.' : 'Connected to Claude Code')
+      : (paused ? 'Sample sessions paused' : 'Showing 3 sample sessions');
   }
   function renderWaiting(){
     const list=S.waiting.filter(r=>!pending||r.id!==pending.r.id).sort((a,b)=>RANK[a.risk]-RANK[b.risk]||a.ts-b.ts);
     let html='';
     const sg=suggestion();
-    if(sg) html+=`<div class="suggest"><p>You’ve allowed “${esc(PATTERNS[sg.pattern])}” ${sg.count} times in ${esc(sg.project)}. Allow it automatically from now on?</p><div class="actions"><button class="btn" data-dismiss="${esc(sg.key)}">Keep asking</button><button class="btn primary" data-rule="${esc(sg.key)}">Make it a rule</button></div></div>`;
-    if(!list.length) html+=`<div class="empty"><h2>Nothing waiting</h2><p>${live()?'Claude Code checks in here before anything risky. Keep this open and you’ll see it the moment it asks.':'Claude Code checks in here before anything risky. You’ll see it the moment it asks.'}</p></div>`;
+    if(sg) html+=`<div class="suggest"><p>You’ve allowed “${esc(PATTERNS[sg.pattern])}” ${sg.count} times in ${esc(sg.project)}. Allow it without asking from now on?</p><div class="actions"><button class="btn" data-dismiss="${esc(sg.key)}">Keep asking</button><button class="btn primary" data-rule="${esc(sg.key)}">Make it a rule</button></div></div>`;
+    if(!list.length) html+=`<div class="empty"><h2>Nothing waiting</h2><p>${live()?'When Claude Code needs your answer, it shows up here and as a notification.':'Sample requests appear here every few seconds.'}</p></div>`;
     list.forEach(r=>{
       const id=esc(r.id), isOpen=open.has(r.id)||r.risk==='high';
       const allowBtn = r.risk==='high'
@@ -297,26 +311,38 @@ button{font:inherit;color:inherit;cursor:pointer}
   }
   function renderHistory(){
     const h=S.history, n=d=>h.filter(x=>x.decision===d).length;
-    $('summary').textContent = h.length ? `So far: ${n('allowed')} allowed by you, ${n('denied')} denied, ${n('rule')} handled by your rules${n('expired')?`, ${n('expired')} timed out`:''}.` : 'No decisions yet. Everything you allow or deny shows up here.';
+    $('summary').textContent = h.length ? `${n('allowed')} allowed, ${n('denied')} denied, ${n('rule')} allowed by rules${n('expired')?`, ${n('expired')} with no answer`:''}.` : 'No decisions yet. Everything you allow or deny shows up here.';
     $('histList').innerHTML=[...h].reverse().slice(0,100).map(x=>`<li><span class="dec ${x.decision}">${DECLABEL[x.decision]||x.decision}</span><span class="ltitle">${esc(x.title)}</span><span class="lmeta">${esc(x.project)}, ${ago(x.at)}</span></li>`).join('');
   }
   function renderRules(){
     if(!S.rules.length){$('ruleList').innerHTML=`<div class="empty"><h2>No rules yet</h2><p>When you allow the same kind of action 3 times in a project, Stewart offers to make it a rule.</p></div>`;return}
-    $('ruleList').innerHTML=S.rules.map(x=>{const k=esc(x.pattern+'|'+x.project);return `<div class="rule"><div><h3>Always allow: ${esc(PATTERNS[x.pattern]||x.pattern)}</h3><p>In ${esc(x.project)}. Used ${x.used||0} times.</p></div><div class="rctl"><label class="switch"><input type="checkbox" data-toggle="${k}" ${x.on?'checked':''} aria-label="Rule on"><span class="tr"></span><span class="th"></span></label><button class="linkbtn" data-remove="${k}">Remove</button></div></div>`}).join('');
+    $('ruleList').innerHTML=S.rules.map(x=>{const k=esc(x.pattern+'|'+x.project);return `<div class="rule"><div><h3>Always allow: ${esc(PATTERNS[x.pattern]||x.pattern)}</h3><p>In ${esc(x.project)}. ${(x.used||0)===1?'Used once':`Used ${x.used||0} times`}.</p></div><div class="rctl"><label class="switch"><input type="checkbox" data-toggle="${k}" ${x.on?'checked':''} aria-label="Allow ${esc(PATTERNS[x.pattern]||x.pattern)} in ${esc(x.project)} without asking"><span class="tr"></span><span class="th"></span></label><button class="linkbtn" data-remove="${k}">Remove</button></div></div>`}).join('');
   }
   function renderFoot(){
-    $('foot').innerHTML = live()
-      ? `<p>Connected to your Claude Code sessions.</p><button class="linkbtn" id="discBtn">Disconnect this device</button>`
-        + (PUSHTEST ? `<div class="ptest"><h2>Notification test</h2><ul id="ptChecks"></ul>
-          <div class="actions"><button class="btn allow" id="ptOn">Turn on notifications</button>
-          <button class="btn" data-ptest="high">Test high risk</button>
-          <button class="btn" data-ptest="grouped">Test grouped</button>
-          <button class="btn" data-ptest="grouped-renotify">Test grouped, alert each time</button>
-          <button class="btn" id="ptClear">Clear test notifications</button></div>
-          <p id="ptMsg" role="status"></p></div>` : '')
-      : `<p>This is a demo. Requests are simulated to show how Claude Code sessions check in with Stewart.</p><button class="linkbtn" id="connBtn">Connect to Claude Code</button> <button class="linkbtn" id="resetBtn">Reset demo</button>`;
+    $('foot').innerHTML = live() ? ''
+      : `<p>This is a demo with sample requests. Connect to see real ones from Claude Code.</p><button class="linkbtn" id="connBtn">Connect to Claude Code</button> <button class="linkbtn" id="resetBtn">Reset demo</button>`;
   }
-  function render(){renderSession();renderWaiting();renderHistory();renderRules();saveDemo()}
+  // Settings: notifications (with the phone tests) and this phone's connection.
+  function renderSettings(){
+    if(!live()){
+      $('settings').innerHTML=`<div class="set"><h2>Notifications</h2><p>Connect this phone to Claude Code to get a notification when it needs your answer.</p>
+        <div class="stack"><button class="btn allow" id="connBtn">Connect to Claude Code</button><button class="btn" id="resetBtn">Reset demo</button></div></div>`;
+      return;
+    }
+    const on=push.state==='on', can=push.state==='off';
+    $('settings').innerHTML=`<div class="set"><h2>Notifications</h2>
+        <p class="state">${esc(on?'Notifications are on for this phone.':pushText())}</p>
+        ${can?'<div class="stack"><button class="btn allow" data-push-on>Turn on notifications</button></div>':''}
+        ${on?`<h3>Test notifications</h3><p>Each test starts 10 seconds after you tap, so you have time to lock your phone.</p>
+        <div class="stack"><button class="btn" data-ptest="high">Test 2 high-risk requests</button>
+          <button class="btn" data-ptest="grouped">Test a notification that updates</button>
+          <button class="btn" data-ptest="quiet">Test quiet updates</button>
+          <button class="btn" id="ptClear">Clear test notifications</button></div>`:''}
+        <p class="msg" id="ptMsg" role="status"></p></div>
+      <div class="set"><h2>This phone</h2><p>This phone gets requests from every Claude Code session on your laptop.</p>
+        <div class="stack"><button class="btn" id="discBtn">Disconnect this phone</button></div></div>`;
+  }
+  function render(){renderSession();renderWaiting();renderHistory();renderRules();renderNotice();saveDemo()}
 
   // ---------- decisions ----------
   function decide(id,decision){
@@ -330,7 +356,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     const {r,decision}=pending; pending=null;
     if(live()){
       try{ await api('POST','/api/decision',{id:r.id,decision}) }
-      catch(e){ if(e.message.endsWith('409')) showToast('Too late: that request had already timed out.',false); else if(e.message!=='401') showToast('Couldn’t send that decision. Check your connection.',false) }
+      catch(e){ if(e.message.endsWith('409')) showToast('Too late. Claude Code is asking on your laptop instead.',false); else if(e.message!=='401') showToast('Couldn’t send your answer. It’s back in Waiting. Check your connection and try again.',false) }
       await pullWaiting(); await pullRest(); render();
     } else {
       S.waiting=S.waiting.filter(x=>x.id!==r.id);
@@ -399,10 +425,11 @@ button{font:inherit;color:inherit;cursor:pointer}
     else if(d.remove) ruleOp('DELETE',d.remove);
     else if(d.toggle) ruleOp('PATCH',d.toggle,{on:t.checked});
     else if(d.tab) setTab(d.tab);
-    else if(t.id==='connBtn'){$('connect').hidden=false;$('tok').focus()}
+    else if(t.id==='connBtn'){openSettings(false);$('connect').hidden=false;$('tokHome').hidden=!standalone();$('tok').focus()}
+    else if(t.id==='setBtn') openSettings($('settings').hidden);
     else if(t.id==='tokCancel'){$('connect').hidden=true}
     else if(t.id==='discBtn') disconnect();
-    else if(t.id==='ptOn') pushOn();
+    else if('pushOn' in d) pushOn();
     else if(d.ptest) pushTest(d.ptest);
     else if(t.id==='ptClear') pushClear();
     else if(t.id==='resetBtn'){S=demoFresh();pending=null;hideToast();render()}
@@ -414,81 +441,105 @@ button{font:inherit;color:inherit;cursor:pointer}
     const t=$('tok').value.trim();
     try{
       const res=await fetch('/api/requests',{headers:{'x-stewart-token':t}});
-      if(res.status===401){$('tokErr').textContent='That token doesn’t match STEWART_TOKEN in Vercel.';return}
-      if(!res.ok){const j=await res.json().catch(()=>({}));$('tokErr').textContent=j.error||('The server answered with error '+res.status+'.');return}
+      if(res.status===401){$('tokErr').textContent='That token doesn’t match the one in Vercel. Check nothing was cut off, then paste it again.';return}
+      if(!res.ok){const j=await res.json().catch(()=>({}));$('tokErr').textContent=j.error||('Stewart isn’t working right now (error '+res.status+'). Try again in a minute.');return}
       store.set(TOKEN_KEY,t); location.reload();
-    }catch(err){$('tokErr').textContent='Couldn’t reach the server. Connecting only works on your deployed Stewart site.'}
+    }catch(err){$('tokErr').textContent='Couldn’t reach Stewart. Check your connection and try again.'}
   });
   function disconnect(msg){ store.del(TOKEN_KEY); token=null; if(msg) alert(msg); location.reload() }
 
-  // ---------- notification test (at ?pushtest, or in the Home Screen app, which has no address bar) ----------
-  const PUSHTEST = new URLSearchParams(location.search).has('pushtest') || matchMedia('(display-mode: standalone)').matches || navigator.standalone===true;
-  const ptMsg = t => { const el=$('ptMsg'); if(el) el.textContent=t };
+  // ---------- notifications ----------
+  // push.state: 'on', 'off' (can be turned on), 'blocked', 'home' (iPhone outside the Home Screen app), 'none'.
+  const push={state:'none'};
+  const standalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const b64u = s => { const b=atob((s+'='.repeat((4-s.length%4)%4)).replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(b,c=>c.charCodeAt(0)) };
-  async function ptChecks(){
-    const el=$('ptChecks'); if(!el) return;
-    const reg='serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
-    const sub=reg&&reg.pushManager ? await reg.pushManager.getSubscription() : null;
-    const yes=v=>v?'<b>Yes</b>':'No';
-    el.innerHTML=[
-      ['Opened from the Home Screen', matchMedia('(display-mode: standalone)').matches||navigator.standalone===true],
-      ['Push available', 'PushManager' in window],
-      ['Permission', 'Notification' in window ? Notification.permission : 'not available'],
-      ['This device subscribed', !!sub],
-      ['Icon badge available', 'setAppBadge' in navigator],
-      ['Can clear notifications', !!(reg&&reg.getNotifications)]
-    ].map(([k,v])=>`<li>${k}: ${typeof v==='string'?'<b>'+esc(v)+'</b>':yes(v)}</li>`).join('');
+  function pushText(){
+    return {off:'Get a notification when Claude Code needs your answer.',
+      blocked:'Notifications are off for Stewart. To turn them on, open Settings › Notifications › Stewart.',
+      home:'To get notifications on iPhone, add Stewart to your Home Screen: tap Share, then Add to Home Screen.',
+      none:'This browser can’t show notifications from Stewart.'}[push.state]||'';
   }
+  async function pushCheck(){
+    if(!('Notification' in window)||!('PushManager' in window)||!('serviceWorker' in navigator)) push.state = ios&&!standalone() ? 'home' : 'none';
+    else if(Notification.permission==='denied') push.state='blocked';
+    else {
+      const reg=await navigator.serviceWorker.getRegistration();
+      const sub=reg&&reg.pushManager ? await reg.pushManager.getSubscription() : null;
+      push.state = Notification.permission==='granted'&&sub ? 'on' : 'off';
+    }
+    renderNotice(); renderSettings();
+  }
+  // In the main flow, only the step that turns notifications on, until they're on.
+  function renderNotice(){
+    const show=live()&&['off','blocked','home'].includes(push.state);
+    $('notice').innerHTML = show ? `<p>${esc(pushText())}</p>${push.state==='off'?'<div class="actions"><button class="btn allow" data-push-on>Turn on notifications</button></div>':''}` : '';
+  }
+  const ptMsg = t => { const el=$('ptMsg'); if(el) el.textContent=t };
   async function pushOn(){
-    ptMsg('');
     try{
-      if(!('Notification' in window)||!('PushManager' in window)) return ptMsg('Push isn’t available here. On iPhone, open Stewart from its Home Screen icon.');
       const perm=await Notification.requestPermission();
-      if(perm!=='granted') return ptMsg('Notifications are off. Turn them on in Settings, Notifications, Stewart.');
-      const reg=await navigator.serviceWorker.ready;
-      const {key}=await api('GET','/api/push');
-      const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)});
-      await api('POST','/api/push',{action:'subscribe',sub:sub.toJSON()});
-      ptMsg('Notifications are on for this device.');
-    }catch(e){ ptMsg('Couldn’t turn on notifications: '+e.message) }
-    ptChecks();
+      if(perm==='granted'){
+        const reg=await navigator.serviceWorker.ready;
+        const {key}=await api('GET','/api/push');
+        const sub=(await reg.pushManager.getSubscription())||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)});
+        await api('POST','/api/push',{action:'subscribe',sub:sub.toJSON()});
+      }
+      await pushCheck();
+      if(push.state==='on') showToast('Notifications are on for this phone.',false);
+    }catch(e){ console.error(e); await pushCheck(); showToast('Couldn’t turn on notifications. Try again.',false) }
   }
   async function pushTest(name){
     try{
       const j=await api('POST','/api/push',{action:'test',test:name});
       ptMsg(`Sending ${j.count} in ${j.startsInSeconds} seconds, ${j.gapSeconds} seconds apart. Lock your phone now.`);
-    }catch(e){ ptMsg('Couldn’t start the test: '+e.message) }
+    }catch(e){ ptMsg('Couldn’t start the test. Check your connection and try again.') }
   }
   async function pushClear(){
     const reg=await navigator.serviceWorker.getRegistration();
-    const list=reg&&reg.getNotifications ? await reg.getNotifications() : [];
+    const list=reg&&reg.getNotifications ? (await reg.getNotifications()).filter(n=>n.tag.startsWith('test-')) : [];
     list.forEach(n=>n.close());
-    if(navigator.clearAppBadge) await navigator.clearAppBadge().catch(()=>{});
-    ptMsg(reg&&reg.getNotifications ? `Cleared ${list.length} notifications and the badge.` : 'This phone doesn’t let Stewart clear notifications. Swipe them away instead.');
+    syncNotes();
+    ptMsg(reg&&reg.getNotifications ? `Cleared ${list.length} test notification${list.length===1?'':'s'}.` : 'This phone doesn’t let Stewart clear notifications. Swipe them away instead.');
   }
+  // Close notifications whose requests are all answered, and keep the icon count right.
+  async function syncNotes(){
+    if(!live()||document.hidden||!('serviceWorker' in navigator)) return;
+    const reg=await navigator.serviceWorker.getRegistration(); if(!reg||!reg.getNotifications) return;
+    const waiting=new Set(S.waiting.map(r=>r.id));
+    (await reg.getNotifications()).forEach(n=>{ const ids=(n.data&&n.data.ids)||[]; if(ids.length&&!ids.some(i=>waiting.has(i))) n.close() });
+    if(navigator.setAppBadge) (S.waiting.length?navigator.setAppBadge(S.waiting.length):navigator.clearAppBadge()).catch(()=>{});
+  }
+  function openSettings(on){
+    $('setBtn').setAttribute('aria-pressed',on);
+    $('settings').hidden=!on;
+    document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',!on&&b.dataset.tab===current));
+    ['waiting','history','rules'].forEach(n=>$(n).hidden=on||n!==current);
+    if(on) renderSettings();
+  }
+  let current='waiting';
   function setTab(name){
-    document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===name));
-    ['waiting','history','rules'].forEach(n=>$(n).hidden=n!==name);
+    current=name; openSettings(false);
     if(live()&&name!=='waiting') pullRest().then(render);
   }
 
   // ---------- start ----------
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
   renderFoot();
-  ptChecks();
+  pushCheck();
   if(live()){
     try{S.dismissed=JSON.parse(store.get('stewart-dismissed')||'[]')}catch(e){}
     let ticking=false;
     const tick=async()=>{
       if(holdEl||ticking) return;
       ticking=true;
-      try{ await pullWaiting(); renderWaiting(); renderSession() } finally { ticking=false }
+      try{ await pullWaiting(); renderWaiting(); renderSession(); syncNotes() } finally { ticking=false }
     };
     Promise.all([pullWaiting(),pullRest()]).then(render);
     setInterval(tick,2000);
     // iOS pauses the page while the phone is locked or Safari is in the background.
     // Check straight away when it comes back instead of waiting for the timer.
-    const wake=()=>{ if(!document.hidden){ tick(); pullRest().then(()=>{renderHistory();renderRules()}) } };
+    const wake=()=>{ if(!document.hidden){ tick(); pushCheck(); pullRest().then(()=>{renderHistory();renderRules()}) } };
     document.addEventListener('visibilitychange',wake);
     ['pageshow','focus','online'].forEach(t=>window.addEventListener(t,wake));
     setInterval(()=>{ if(!holdEl) pullRest().then(()=>{renderHistory();renderRules();renderWaiting()}) },15000);
@@ -500,7 +551,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       const p=POOL[Math.floor(Math.random()*POOL.length)];
       const r=mk(p,PROJECTS[Math.floor(Math.random()*PROJECTS.length)],Date.now(),'d'+(++S.seq));
       const rule=r.risk!=='high'&&r.pattern&&S.rules.find(x=>x.on&&x.pattern===r.pattern&&x.project===r.project);
-      if(rule){ rule.used=(rule.used||0)+1; S.history.push({title:r.title,project:r.project,risk:r.risk,pattern:r.pattern,decision:'rule',at:Date.now()}); render(); if(!pending) showToast('Handled by your rule: '+r.title,false) }
+      if(rule){ rule.used=(rule.used||0)+1; S.history.push({title:r.title,project:r.project,risk:r.risk,pattern:r.pattern,decision:'rule',at:Date.now()}); render(); if(!pending) showToast('Allowed by your rule: '+r.title,false) }
       else { S.waiting.push(r); render() }
     },9000);
     setInterval(()=>{ if(!holdEl){renderWaiting();renderHistory()} },15000);

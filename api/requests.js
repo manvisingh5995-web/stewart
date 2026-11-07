@@ -1,9 +1,18 @@
 // POST: Claude Code's hook files a new request.
 // GET:  the inbox lists everything still waiting.
 import { randomUUID } from 'node:crypto';
+import { waitUntil } from '@vercel/functions';
 import { redis, authed, getRules, saveItem, record, STALE_MS } from '../lib/store.js';
+import { setupPush, notifyNew } from '../lib/notify.js';
 
 const RISKS = ['low', 'medium', 'high'];
+const clip = (v, n) => typeof v === 'string' ? v.slice(0, n) : undefined;
+
+// The hook's words for notifications. Plain text only: no commands or paths.
+function cleanNote(n) {
+  if (!n || typeof n !== 'object') return null;
+  return { title: clip(n.title, 80), body: clip(n.body, 160), one: clip(n.one, 40), many: clip(n.many, 40) };
+}
 
 export default async function handler(req, res) {
   if (!authed(req, res)) return;
@@ -20,6 +29,7 @@ export default async function handler(req, res) {
       why: String(b.why || '').slice(0, 300),
       risk: RISKS.includes(b.risk) ? b.risk : 'high', // unknown risk is treated as high
       pattern: typeof b.pattern === 'string' ? b.pattern.slice(0, 40) : null,
+      note: cleanNote(b.note),
       ts: Date.now(),
       status: 'waiting'
     };
@@ -38,6 +48,10 @@ export default async function handler(req, res) {
 
     await saveItem(r, item);
     await r.zadd('waiting', { score: item.ts, member: item.id });
+    // Notify after answering, so the hook isn't kept waiting on Apple's push servers.
+    waitUntil((async () => {
+      try { setupPush(); await notifyNew(r, item); } catch (err) { console.error('Notify failed', err.message); }
+    })());
     return res.status(201).json({ id: item.id, status: 'waiting' });
   }
 

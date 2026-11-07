@@ -14,6 +14,8 @@ while she builds her other portfolio projects, then shows the real data.
 - `api/requests.js`, `api/decision.js`, `api/history.js`, `api/rules.js`:
   Vercel serverless functions.
 - `lib/store.js`: Upstash Redis client, token check, history helpers.
+- `lib/notify.js`, `api/push.js`, `sw.js`: web push. One notification per
+  high-risk request, one per project for low and medium, plus a halfway reminder.
 - `hooks/stewart-hook.mjs`: the Claude Code hook. `classify()` turns a tool
   call into a plain-language request with a risk level.
 
@@ -38,6 +40,11 @@ Tokens (light / dark):
 
 Writing: sentence case, plain verbs, the same verb all the way through
 (Allow → “Allowed”). Errors say what happened and how to fix it.
+
+## Voice
+Calm and plain. Every message says what will happen next, in words a
+Claude Code user would use. Never scare and never blame: state the
+consequence, not a warning, and when something fails, say what to do.
 
 ## Skills plan
 Use skills one phase at a time, not all at once.
